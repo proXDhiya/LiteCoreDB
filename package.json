@@ -4,7 +4,8 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "husky": "^9.1.7"
   },
   "peerDependencies": {
     "typescript": "^5"
@@ -14,6 +15,7 @@
     "test": "bun test --env-file=.env.test --preload ./tests/setup.ts",
     "test:watch": "bun test --watch --env-file=.env.test --preload ./tests/setup.ts",
     "test:cov": "bun test --coverage --env-file=.env.test --preload ./tests/setup.ts",
-    "test:ci": "bun test --coverage --env-file=.env.test --preload ./tests/setup.ts"
+    "test:ci": "bun test --coverage --env-file=.env.test --preload ./tests/setup.ts",
+    "prepare": "husky"
   }
 }
