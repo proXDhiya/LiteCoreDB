@@ -1,0 +1,19 @@
+{
+  "name": "app",
+  "module": "src/app.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "scripts": {
+    "start": "bun src/app.ts",
+    "test": "bun test --env-file=.env.test --preload ./tests/setup.ts",
+    "test:watch": "bun test --watch --env-file=.env.test --preload ./tests/setup.ts",
+    "test:cov": "bun test --coverage --env-file=.env.test --preload ./tests/setup.ts",
+    "test:ci": "bun test --coverage --env-file=.env.test --preload ./tests/setup.ts"
+  }
+}
