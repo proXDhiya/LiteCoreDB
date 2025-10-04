@@ -10,6 +10,7 @@
  */
 import * as readline from 'node:readline';
 import { Router } from './router';
+import { session } from './session.ts';
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -19,10 +20,16 @@ const rl = readline.createInterface({
 
 const router = new Router();
 
+function computePrompt(): string {
+    return session.dbName ? `\nLiteCode - ${session.dbName}> ` : '\nLiteCode> ';
+}
+
+rl.setPrompt(computePrompt());
 rl.prompt();
 
 rl.on('line', (line) => {
     const input = line.trim();
     router.command(input);
+    rl.setPrompt(computePrompt());
     rl.prompt();
 });
