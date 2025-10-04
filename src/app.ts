@@ -14,7 +14,7 @@ import { Router } from './router';
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-    prompt: 'LiteCode> ',
+    prompt: '\nLiteCode> ',
 });
 
 const router = new Router();
