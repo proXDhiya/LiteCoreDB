@@ -31,7 +31,7 @@ export class ExitCommand implements Command {
     }
 
     /** Terminates the Node/Bun process with exit code 0. */
-    public execute(): void {
+    public execute(_args?: string[]): void {
         process.exit(0)
     }
 }

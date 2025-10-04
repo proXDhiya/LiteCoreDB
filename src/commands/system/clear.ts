@@ -31,7 +31,7 @@ export class ClearCommand implements Command {
     }
 
     /** Clears the console. */
-    public execute(): void {
+    public execute(_args?: string[]): void {
         console.clear()
     }
 }

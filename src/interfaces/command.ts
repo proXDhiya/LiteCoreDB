@@ -9,6 +9,11 @@
  * - description: A short, one-line summary used in global help.
  * - help: Prints extended usage information and examples.
  * - execute: Performs the command's action.
+ *
+ * Arguments
+ * - Commands may accept arguments parsed from the user input. The router will pass the
+ *   remaining tokens (after the matched command name) as a string array, preserving order.
+ *   For example, "ATTACH DATABASE ./db.db" will call execute(["./db.db"]).
  */
 export interface Command {
     /** Primary name of the command (e.g., ".exit"). */
@@ -17,6 +22,6 @@ export interface Command {
     description(): string;
     /** Prints usage details and examples to the console. */
     help(): void;
-    /** Runs the command. May exit the process (e.g., ExitCommand). */
-    execute(): void;
+    /** Runs the command with optional arguments. May exit the process (e.g., ExitCommand). */
+    execute(args?: string[]): void;
 }

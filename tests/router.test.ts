@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import { Router } from "~/router.ts";
 
 function captureConsole() {
@@ -55,6 +55,20 @@ describe("Router", () => {
       const out = cap.logs.join("\n");
       expect(out).toContain("Exit the current REPL session");
       expect(out.length).toBeGreaterThan(0);
+    } finally {
+      cap.restore();
+    }
+  });
+
+  it("groups global help by System and Database categories", () => {
+    const cap = captureConsole();
+    try {
+      router.command("help");
+      const out = cap.logs.join("\n");
+      expect(out).toContain("System commands:");
+      expect(out).toContain("Database commands:");
+      expect(out).toContain(".exit - Exit the current REPL session");
+      expect(out).toContain("ATTACH DATABASE - Attach to a database for the current session using the provided path");
     } finally {
       cap.restore();
     }
