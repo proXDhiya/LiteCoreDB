@@ -1,4 +1,5 @@
-import { ExitCommand } from './exit';
+import {ClearCommand} from "./clear.ts";
+import {ExitCommand} from './exit';
 
 /**
  * SystemCommandRegistry
@@ -7,8 +8,8 @@ import { ExitCommand } from './exit';
  * Add new system commands here as properties to make them discoverable by the Router.
  */
 export class SystemCommandRegistry {
-    /** Exit the REPL session. */
     public exit = new ExitCommand();
+    public clear = new ClearCommand();
 }
 
 /**
