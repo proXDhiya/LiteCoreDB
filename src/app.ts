@@ -1,36 +1,32 @@
 /**
- * LiteCoreDB REPL entrypoint
+ * LiteCoreDB REPL entrypoint.
  *
- * This module starts a simple readline-based REPL and delegates input handling to the Router.
- *
- * Flow
- * 1. Print a welcome banner with version and quick help.
- * 2. Prompt the user for input ("LiteCore> ").
- * 3. On each line, pass the raw input to Router.command().
- * 4. Router resolves the command (case-insensitive; supports ".exit") and executes it or prints help.
+ * Starts a readline-based REPL, displays a welcome banner, and delegates input
+ * handling to the Router. Prompt rendering and history persistence are handled
+ * via helpers under src/helpers/cli.
  */
+import { appendHistory, historyOptions } from '~/helpers/cli/history.ts';
 import { printWelcome } from "~/helpers/cli/welcome.ts";
+import { computePrompt } from '~/helpers/cli/prompt.ts';
 import * as readline from 'node:readline';
-import { session } from './session.ts';
 import { Router } from './router';
 
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
     prompt: '\nLiteCore> ',
+    ...historyOptions,
 });
 
 const router = new Router();
-
-function computePrompt(): string {
-    return session.dbName ? `\nLiteCore - ${session.dbName}> ` : '\nLiteCore> ';
-}
 
 printWelcome();
 rl.setPrompt(computePrompt());
 rl.prompt();
 
 rl.on('line', (line) => {
+    appendHistory(line);
+
     const input = line.trim();
     router.command(input);
     rl.setPrompt(computePrompt());
