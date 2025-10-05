@@ -1,9 +1,9 @@
-import {escapeRegex, normalizeName} from './helpers/strings';
-import {SystemCommands} from './commands/system/_index';
-import {DatabaseCommands} from './commands/database/_index.ts';
-import type {Command} from '@Interfaces/command';
-import {levenshtein} from './helpers/distance';
-import {isHelpToken} from './helpers/help';
+import { escapeRegex, normalizeName } from "~/helpers/text/strings.ts";
+import { SystemCommands } from './commands/system/_index';
+import { DatabaseCommands } from './commands/database/_index.ts';
+import type { Command } from '@Interfaces/command';
+import { levenshtein } from "~/helpers/text/distance.ts";
+import { isHelpToken } from "~/helpers/cli/help.ts";
 
 /**
  * Router

@@ -23,7 +23,7 @@ bun run start
 You’ll see the prompt:
 
 ```
-LiteCode> 
+LiteCore> 
 ```
 
 Basic usage inside the REPL:
@@ -59,10 +59,17 @@ Top‑level components and their responsibilities:
   - Database commands (src/commands/database): ATTACH DATABASE
   - Each command implements the Command interface and is registered via a registry class (SystemCommands, DatabaseCommands).
 - Helpers (src/helpers)
-  - strings.ts: escapeRegex, normalizeName
-  - help.ts: isHelpToken
-  - distance.ts: levenshtein
-  - header.ts: createHeader, isValidHeader
+  - cli/
+    - help.ts: isHelpToken
+    - welcome.ts: printWelcome
+  - db/
+    - header.ts: createHeader, isValidHeader
+    - database_file.ts: ensureDatabaseFile (create/validate DB file with header)
+  - fs/
+    - paths.ts: resolveUserPath (expands ~, resolves ./ and ../), ensureParentDir
+  - text/
+    - strings.ts: escapeRegex, normalizeName
+    - distance.ts: levenshtein
 - Constants (src/constants)
   - header.ts: constants for the on‑disk header (size, offsets, defaults).
 - Session (src/session.ts)
@@ -125,8 +132,26 @@ Layout:
 
 Implementation:
 - Constants in src/constants/header.ts
-- Helpers in src/helpers/header.ts
+- Helpers in src/helpers/db/header.ts
 - Used by ATTACH DATABASE in src/commands/database/attach.ts
+
+### ATTACH DATABASE path handling
+
+ATTACH DATABASE accepts a filesystem path and follows it exactly, supporting:
+- Tilde expansion: `~` and `~/...` resolve to your home directory.
+- Relative paths: `./...` and `../...` are resolved against the current working directory.
+- Absolute paths: `/...` are used as-is.
+
+Behavior:
+- Ensures the parent directory exists (mkdir -p) before creating a new file.
+- If the file doesn’t exist, creates it and writes a 100-byte header.
+- If the file exists, validates the header (magic string and non-zero page size). If invalid, prints an error and does not attach.
+
+Examples:
+- `ATTACH DATABASE ./dbs/my.db`
+- `ATTACH DATABASE ../data/project.db`
+- `ATTACH DATABASE ~/Database/mysql.db`
+- `ATTACH DATABASE /var/lib/litecore/example.db`
 
 
 ## Session and prompt
@@ -136,8 +161,8 @@ The current session state lives in src/session.ts. When ATTACH DATABASE succeeds
 - session.dbName — derived name (file basename without extension)
 
 The prompt uses this to display either:
-- "LiteCode> " when no database is attached
-- "LiteCode - <db_name> >" when a database is attached (e.g., "LiteCode - mydb> ")
+- "LiteCore> " when no database is attached
+- "LiteCore - <db_name> >" when a database is attached (e.g., "LiteCore - mydb> ")
 
 
 ## Project structure
@@ -159,10 +184,17 @@ The prompt uses this to display either:
 │  │     ├─ _index.ts       # DatabaseCommands registry
 │  │     └─ attach.ts       # ATTACH DATABASE
 │  ├─ helpers
-│  │  ├─ strings.ts         # escapeRegex, normalizeName
-│  │  ├─ help.ts            # isHelpToken
-│  │  ├─ distance.ts        # levenshtein
-│  │  └─ header.ts          # createHeader, isValidHeader
+│  │  ├─ cli
+│  │  │  ├─ help.ts          # isHelpToken
+│  │  │  └─ welcome.ts       # printWelcome
+│  │  ├─ db
+│  │  │  ├─ header.ts        # createHeader, isValidHeader
+│  │  │  └─ database_file.ts # ensureDatabaseFile
+│  │  ├─ fs
+│  │  │  └─ paths.ts         # resolveUserPath, ensureParentDir
+│  │  └─ text
+│  │     ├─ strings.ts       # escapeRegex, normalizeName
+│  │     └─ distance.ts      # levenshtein
 │  └─ constants
 │     └─ header.ts          # header constants (sizes, offsets)
 ├─ tests                    # Bun test files

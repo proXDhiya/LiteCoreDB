@@ -4,26 +4,29 @@
  * This module starts a simple readline-based REPL and delegates input handling to the Router.
  *
  * Flow
- * 1. Prompt the user for input ("LiteCode> ").
- * 2. On each line, pass the raw input to Router.command().
- * 3. Router resolves the command (case-insensitive; supports ".exit") and executes it or prints help.
+ * 1. Print a welcome banner with version and quick help.
+ * 2. Prompt the user for input ("LiteCore> ").
+ * 3. On each line, pass the raw input to Router.command().
+ * 4. Router resolves the command (case-insensitive; supports ".exit") and executes it or prints help.
  */
+import { printWelcome } from "~/helpers/cli/welcome.ts";
 import * as readline from 'node:readline';
-import { Router } from './router';
 import { session } from './session.ts';
+import { Router } from './router';
 
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-    prompt: '\nLiteCode> ',
+    prompt: '\nLiteCore> ',
 });
 
 const router = new Router();
 
 function computePrompt(): string {
-    return session.dbName ? `\nLiteCode - ${session.dbName}> ` : '\nLiteCode> ';
+    return session.dbName ? `\nLiteCore - ${session.dbName}> ` : '\nLiteCore> ';
 }
 
+printWelcome();
 rl.setPrompt(computePrompt());
 rl.prompt();
 

@@ -132,4 +132,53 @@ describe("ATTACH DATABASE", () => {
       cap.restore();
     }
   });
+  it("expands '~' to the home directory and does not create a literal '~' folder", () => {
+    const router = new Router();
+    const cap = captureConsole();
+    const prevHome = process.env.HOME;
+    try {
+      // Point HOME to our temp dir so we don't write into the real home folder
+      process.env.HOME = TMP_DIR;
+
+      const tildePath = "~/tilde_attach.db";
+      const expected = path.join(TMP_DIR, "tilde_attach.db");
+      expect(fs.existsSync(expected)).toBe(false);
+
+      router.command(`ATTACH DATABASE ${tildePath}`);
+
+      // File should be created inside TMP_DIR (mocked HOME)
+      expect(fs.existsSync(expected)).toBe(true);
+      // And no literal '~' directory should be created in CWD
+      expect(fs.existsSync(path.join(process.cwd(), "~"))).toBe(false);
+
+      const out = cap.logs.join("\n");
+      expect(out).toContain(`Attached database: ${tildePath}`);
+    } finally {
+      // Cleanup and restore
+      process.env.HOME = prevHome;
+      cap.restore();
+    }
+  });
+
+  it("supports '../' and './' by resolving relative paths correctly", () => {
+    const router = new Router();
+    const cap = captureConsole();
+    const relUp = path.join("tests", "tmp", "..", "tmp_rel_up.attach.db");
+    const resolved = path.resolve(relUp);
+    try {
+      // Ensure clean state
+      if (fs.existsSync(resolved)) fs.rmSync(resolved, { force: true });
+      expect(fs.existsSync(resolved)).toBe(false);
+
+      router.command(`ATTACH DATABASE ${relUp}`);
+
+      expect(fs.existsSync(resolved)).toBe(true);
+      const out = cap.logs.join("\n");
+      expect(out).toContain(`Attached database: ${relUp}`);
+    } finally {
+      // Cleanup the created file outside TMP_DIR
+      if (fs.existsSync(resolved)) fs.rmSync(resolved, { force: true });
+      cap.restore();
+    }
+  });
 });
