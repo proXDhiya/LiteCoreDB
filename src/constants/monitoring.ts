@@ -3,7 +3,7 @@
  */
 
 /** Dotfile basename for the monitoring log under the user's home directory. */
-export const MONITOR_BASENAME = ".litecore_monitoring.log";
+export const MONITOR_BASENAME = ".litecore_monitoring.csv";
 
 /** Default monitoring toggle state. */
 export const DEFAULT_MONITORING_ENABLED = false;

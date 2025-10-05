@@ -57,7 +57,7 @@ Top‑level components:
   - prompt.ts — computePrompt based on session
   - welcome.ts — printWelcome banner
   - history.ts — load/append history and provide readline options
-  - monitoring.ts — enable/disable monitoring and append JSONL metrics
+  - monitoring.ts — enable/disable monitoring and append CSV metrics
 - Constants (src/constants)
   - header.ts — header sizes/offsets/defaults
   - repl.ts — history config
@@ -243,24 +243,31 @@ Example
 
 ## Monitoring and performance metrics (.monitoring)
 
-You can optionally collect per-command timing and write results to a JSONL log. Monitoring is disabled by default.
+You can optionally collect per-command timing and write results to a CSV log. Monitoring is disabled by default.
 
 - Default: OFF (src/constants/monitoring.ts → DEFAULT_MONITORING_ENABLED)
-- Log file: ~/.litecore_monitoring.log (src/constants/monitoring.ts → MONITOR_BASENAME)
+- Log file: ~/.litecore_monitoring.csv (src/constants/monitoring.ts → MONITOR_BASENAME)
 - Toggle/status command: .monitoring
   - .monitoring — print current status and the target log file
   - .monitoring status — same as above
   - .monitoring true | on | enable — enable monitoring and print the log path
   - .monitoring false | off | disable — disable monitoring and print the log path
 - Inline output: When ON, after each command the REPL prints a short summary like: [monitor] 12.34 ms
-- JSONL schema: Each executed input line (non-empty) appends one JSON object per line to the log file:
-  - ts: ISO timestamp when execution started
-  - input: the raw input the user entered
-  - ms: execution duration in milliseconds
+- CSV schema: Each executed input line (non-empty) appends one row to the log file. A header is written once when the file is first created. Columns:
+  - ts (ISO timestamp)
+  - input (raw user input; CSV-escaped)
+  - ms (execution duration in milliseconds)
+  - deltaHeapUsedBytes (bytes)
+  - deltaRssBytes (bytes)
+  - deltaExternalBytes (bytes; optional)
+  - deltaArrayBuffersBytes (bytes; optional)
+  - userMicros (CPU user time, microseconds)
+  - systemMicros (CPU system time, microseconds)
 
-Example JSONL entry
+Example CSV entry
 ```
-{"ts":"2025-10-05T13:20:00.000Z","input":"ATTACH DATABASE ./data.db","ms":12.34}
+ts,input,ms,deltaHeapUsedBytes,deltaRssBytes,deltaExternalBytes,deltaArrayBuffersBytes,userMicros,systemMicros
+2025-10-05T13:20:00.000Z,"ATTACH DATABASE ./data.db",12.34,10240,0,,,8000,2000
 ```
 
 Exit behavior
@@ -279,7 +286,7 @@ Implementation
 Newly relevant files for REPL UX and metrics:
 - src/helpers/cli/history.ts — persistent history utilities
 - src/helpers/cli/prompt.ts — computes dynamic prompt based on session
-- src/helpers/cli/monitoring.ts — monitoring utilities and JSONL logging
+- src/helpers/cli/monitoring.ts — monitoring utilities and CSV logging
 - src/constants/repl.ts — REPL constants (history)
 - src/constants/monitoring.ts — Monitoring constants
 

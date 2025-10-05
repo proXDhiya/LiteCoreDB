@@ -31,6 +31,10 @@ rl.on('line', (line) => {
     const input = line.trim();
     const start = (typeof performance !== 'undefined' && performance && typeof performance.now === 'function') ? performance.now() : Date.now();
 
+    // Capture baseline resource usage
+    const memStart = typeof process.memoryUsage === 'function' ? process.memoryUsage() : undefined as unknown as NodeJS.MemoryUsage | undefined;
+    const cpuStart = typeof process.cpuUsage === 'function' ? process.cpuUsage() : undefined as unknown as NodeJS.CpuUsage | undefined;
+
     router.command(input);
 
     const end = (typeof performance !== 'undefined' && performance && typeof performance.now === 'function') ? performance.now() : Date.now();
@@ -38,8 +42,32 @@ rl.on('line', (line) => {
 
     if (input && isMonitoringEnabled()) {
         const ts = new Date().toISOString();
+
+        // Compute deltas after execution
+        const memEnd = typeof process.memoryUsage === 'function' ? process.memoryUsage() : undefined as unknown as NodeJS.MemoryUsage | undefined;
+        const cpuDiff = (typeof process.cpuUsage === 'function' && cpuStart)
+            ? process.cpuUsage(cpuStart as NodeJS.CpuUsage)
+            : undefined;
+
+        const memory = (memStart && memEnd)
+            ? {
+                deltaHeapUsedBytes: memEnd.heapUsed - memStart.heapUsed,
+                deltaRssBytes: memEnd.rss - memStart.rss,
+                deltaExternalBytes: (memEnd as any).external !== undefined && (memStart as any).external !== undefined
+                    ? (memEnd as any).external - (memStart as any).external
+                    : undefined,
+                deltaArrayBuffersBytes: (memEnd as any).arrayBuffers !== undefined && (memStart as any).arrayBuffers !== undefined
+                    ? (memEnd as any).arrayBuffers - (memStart as any).arrayBuffers
+                    : undefined,
+            }
+            : undefined;
+
+        const cpu = cpuDiff
+            ? { userMicros: cpuDiff.user, systemMicros: cpuDiff.system }
+            : undefined;
+
         console.log(`[monitor] ${ms.toFixed(2)} ms`);
-        logMetrics({ts, input, ms});
+        logMetrics({ts, input, ms, memory, cpu});
     }
 
     rl.setPrompt(computePrompt());

@@ -2,14 +2,15 @@
  * Monitoring utilities for the LiteCoreDB REPL.
  *
  * Provides an opt-in performance/metrics collection for each executed input line.
- * Metrics are printed inline when enabled and also appended to a log file under
- * the user's home directory.
+ * Metrics are printed inline when enabled and also appended as CSV rows to a log
+ * file under the user's home directory.
  */
-import * as os from 'node:os';
-import * as path from 'node:path';
-import * as fs from 'node:fs';
-import {session} from '~/session.ts';
 import {MONITOR_BASENAME, DEFAULT_MONITORING_ENABLED} from '~/constants/monitoring.ts';
+import type {MetricEntry} from '~/interfaces/monitoring.ts';
+import {session} from '~/session.ts';
+import * as path from 'node:path';
+import * as os from 'node:os';
+import * as fs from 'node:fs';
 
 /**
  * Compute the absolute path to the monitoring log file.
@@ -47,24 +48,54 @@ export function isMonitoringEnabled(): boolean {
     return !!session.monitoringEnabled;
 }
 
-export interface MetricEntry {
-    /** ISO timestamp when the command started. */
-    ts: string;
-    /** Raw input text entered by the user. */
-    input: string;
-    /** Execution duration in milliseconds. */
-    ms: number;
+export type { MetricEntry } from '@Interfaces/monitoring.ts';
+
+/** CSV header for the monitoring log file. */
+const CSV_HEADER = 'ts,input,ms,deltaHeapUsedBytes,deltaRssBytes,deltaExternalBytes,deltaArrayBuffersBytes,userMicros,systemMicros';
+
+/** Escape a single CSV field according to RFC 4180-ish rules. */
+function csvEscape(value: string): string {
+    if (value === '') return '';
+    const needsQuotes = /[",\n\r]/.test(value) || /^\s|\s$/.test(value);
+    let v = value.replace(/"/g, '""');
+    return needsQuotes ? `"${v}"` : v;
+}
+
+/** Convert a MetricEntry to a CSV row string (without trailing newline). */
+function toCsv(entry: MetricEntry): string {
+    const mem = entry.memory || {} as any;
+    const cpu = entry.cpu || {} as any;
+    const fields = [
+        entry.ts,
+        entry.input,
+        String(entry.ms),
+        mem.deltaHeapUsedBytes ?? '',
+        mem.deltaRssBytes ?? '',
+        mem.deltaExternalBytes ?? '',
+        mem.deltaArrayBuffersBytes ?? '',
+        cpu.userMicros ?? '',
+        cpu.systemMicros ?? '',
+    ].map((v) => v === '' ? '' : typeof v === 'string' ? csvEscape(v) : String(v));
+    return fields.join(',');
 }
 
 /**
- * Append a metric entry to the log file. Errors are ignored.
+ * Append a metric entry to the log file in CSV format. Errors are ignored.
  */
 export function logMetrics(entry: MetricEntry): void {
     const file = session.monitorLogPath || getMonitoringFilePath();
     try {
-        const line = JSON.stringify(entry) + '\n';
-        fs.appendFile(file, line, () => {
-        });
+        // Determine if we need to write the header
+        let needsHeader = false;
+        try {
+            if (!fs.existsSync(file) || fs.statSync(file).size === 0) {
+                needsHeader = true;
+            }
+        } catch {
+            needsHeader = true;
+        }
+        const payload = (needsHeader ? CSV_HEADER + '\n' : '') + toCsv(entry) + '\n';
+        fs.appendFile(file, payload, () => {});
     } catch {
         // ignore write errors
     }
