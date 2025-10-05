@@ -1,3 +1,4 @@
+import {printMonitoringLogPathIfAny} from "~/helpers/cli/monitoring.ts";
 import type {Command} from "@Interfaces/command";
 
 /**
@@ -32,6 +33,11 @@ export class ExitCommand implements Command {
 
     /** Terminates the Node/Bun process with exit code 0. */
     public execute(_args?: string[]): void {
-        process.exit(0)
+        try {
+            // Always print the monitoring log path if available/exists for discoverability
+            printMonitoringLogPathIfAny();
+        } finally {
+            process.exit(0)
+        }
     }
 }

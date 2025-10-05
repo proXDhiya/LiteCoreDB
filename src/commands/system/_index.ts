@@ -1,3 +1,4 @@
+import {MonitoringCommand} from './monitoring.ts';
 import {ClearCommand} from "./clear.ts";
 import {ExitCommand} from './exit';
 
@@ -10,6 +11,7 @@ import {ExitCommand} from './exit';
 export class SystemCommandRegistry {
     public exit = new ExitCommand();
     public clear = new ClearCommand();
+    public monitoring = new MonitoringCommand();
 }
 
 /**

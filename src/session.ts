@@ -5,6 +5,8 @@
  * updated accordingly. Commands can update this state when they succeed.
  */
 export const session: {
-  dbPath?: string;
-  dbName?: string;
+    dbPath?: string;
+    dbName?: string;
+    monitoringEnabled?: boolean;
+    monitorLogPath?: string;
 } = {};
