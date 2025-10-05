@@ -264,7 +264,8 @@ Example JSONL entry
 ```
 
 Exit behavior
-- On .monitoring false and on .exit, the REPL prints the monitoring log path for discoverability.
+- On .monitoring false, the REPL prints the monitoring log path for discoverability.
+- On .exit, the log path is printed only when monitoring is currently ON; if monitoring is OFF, nothing is printed.
 
 Implementation
 - src/helpers/cli/monitoring.ts (enableMonitoring, disableMonitoring, isMonitoringEnabled, logMetrics, printMonitoringLogPathIfAny)

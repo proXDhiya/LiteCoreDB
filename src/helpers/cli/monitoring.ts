@@ -75,16 +75,9 @@ export function logMetrics(entry: MetricEntry): void {
  */
 export function printMonitoringLogPathIfAny(): void {
     const file = session.monitorLogPath || getMonitoringFilePath();
-    if (session.monitoringEnabled === false || session.monitoringEnabled === undefined) {
-        // Still print the path for discoverability if the file has content or exists
-        try {
-            if (fs.existsSync(file)) {
-                console.log(`Monitoring log: ${file}`);
-            }
-        } catch {
-            // ignore
-        }
-    } else {
+    // Only print the monitoring log path when monitoring is currently enabled.
+    // If monitoring is off, do not print anything on exit.
+    if (session.monitoringEnabled) {
         console.log(`Monitoring log: ${file}`);
     }
 }
