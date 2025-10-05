@@ -7,10 +7,10 @@
  * to the end of the file. When loading into Node's readline, the array must be
  * reversed (newest first).
  */
+import {DEFAULT_HISTORY_SIZE, HISTORY_BASENAME} from '~/constants/repl.ts';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
-import { DEFAULT_HISTORY_SIZE, HISTORY_BASENAME } from '~/constants/repl.ts';
 
 /**
  * Compute the absolute path to the REPL history file.
@@ -18,8 +18,8 @@ import { DEFAULT_HISTORY_SIZE, HISTORY_BASENAME } from '~/constants/repl.ts';
  * @returns Absolute path to the history file (e.g., "/home/user/.litecore_history").
  */
 export function getHistoryFilePath(): string {
-  const home = os.homedir?.() || process.env.HOME || '.';
-  return path.join(home, HISTORY_BASENAME);
+    const home = os.homedir?.() || process.env.HOME || '.';
+    return path.join(home, HISTORY_BASENAME);
 }
 
 /**
@@ -33,16 +33,16 @@ export function getHistoryFilePath(): string {
  * @returns Array of history lines with newest entry first; empty array on error or if file missing.
  */
 export function loadHistory(max: number = DEFAULT_HISTORY_SIZE): string[] {
-  const file = getHistoryFilePath();
-  try {
-    if (!fs.existsSync(file)) return [];
-    const raw = fs.readFileSync(file, 'utf8');
-    const lines = raw.split(/\r?\n/).filter(Boolean); // drop empty lines
-    return lines.slice(-max).reverse();
-  } catch {
-    // On any error, fall back to no history
-    return [];
-  }
+    const file = getHistoryFilePath();
+    try {
+        if (!fs.existsSync(file)) return [];
+        const raw = fs.readFileSync(file, 'utf8');
+        const lines = raw.split(/\r?\n/).filter(Boolean); // drop empty lines
+        return lines.slice(-max).reverse();
+    } catch {
+        // On any error, fall back to no history
+        return [];
+    }
 }
 
 /**
@@ -54,16 +54,17 @@ export function loadHistory(max: number = DEFAULT_HISTORY_SIZE): string[] {
  * @param line Raw input line as typed by the user (before trimming is acceptable).
  */
 export function appendHistory(line: string): void {
-  const input = line.trim();
-  if (input.length === 0) return;
-  if (/^\s/.test(line)) return; // ignore lines starting with a space
+    const input = line.trim();
+    if (input.length === 0) return;
+    if (/^\s/.test(line)) return; // ignore lines starting with a space
 
-  const file = getHistoryFilePath();
-  try {
-    fs.appendFile(file, input + '\n', () => {});
-  } catch {
-    // Silently ignore file write errors
-  }
+    const file = getHistoryFilePath();
+    try {
+        fs.appendFile(file, input + '\n', () => {
+        });
+    } catch {
+        // Silently ignore file write errors
+    }
 }
 
 /**
@@ -71,7 +72,7 @@ export function appendHistory(line: string): void {
  * Can be spread into readline.createInterface options.
  */
 export const historyOptions = {
-  history: loadHistory(DEFAULT_HISTORY_SIZE),
-  historySize: DEFAULT_HISTORY_SIZE,
-  removeHistoryDuplicates: true,
+    history: loadHistory(DEFAULT_HISTORY_SIZE),
+    historySize: DEFAULT_HISTORY_SIZE,
+    removeHistoryDuplicates: true,
 } as const;

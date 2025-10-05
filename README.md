@@ -1,6 +1,6 @@
 # LiteCoreDB
 
-A minimal SQL database learning project powered by Bun.js and TypeScript. LiteCoreDB provides a small REPL ("LiteCode>") with a regex‑driven command router, a pluggable command system (System and Database categories), and an on‑disk database file with a simple 100‑byte header inspired by SQLite.
+A minimal SQL database learning project powered by Bun.js and TypeScript. LiteCoreDB provides a small REPL ("LiteCore>") with a regex‑driven command router, a pluggable command system (System and Database categories), and an on‑disk database file with a simple 100‑byte header inspired by SQLite.
 
 Goals:
 - Explore how a small DB engine could be structured.
@@ -36,48 +36,32 @@ Basic usage inside the REPL:
 When a database is attached, the prompt changes to include its name:
 
 ```
-LiteCode - mydb> 
+LiteCore - mydb> 
 ```
 
 
 ## Architecture overview
 
-Top‑level components and their responsibilities:
+Top‑level components:
 
 - REPL entrypoint (src/app.ts)
-  - Starts a readline loop and delegates each input line to the Router.
-  - Dynamically computes the prompt based on session.dbName.
+  - Starts a readline loop, sets/updates the prompt, wires persistent history and optional monitoring, and delegates each input line to the Router.
 - Router (src/router.ts)
-  - Discovers commands from registries.
-  - Regex‑matches command names (case‑insensitive), including multi‑word names (e.g., "ATTACH DATABASE").
-  - Parses arguments (tokens after the matched command name).
-  - Supports global help and per‑command help tokens (help, --help, -h, ?).
-  - Suggests the closest command for unknown input (Levenshtein + prefix heuristics).
-  - Important: some system commands require a leading dot (e.g., ".exit").
-- Commands (src/commands)
-  - System commands (src/commands/system): .exit, .clear
-  - Database commands (src/commands/database): ATTACH DATABASE
-  - Each command implements the Command interface and is registered via a registry class (SystemCommands, DatabaseCommands).
-- Helpers (src/helpers)
-  - cli/
-    - help.ts: isHelpToken
-    - welcome.ts: printWelcome
-  - db/
-    - header.ts: createHeader, isValidHeader
-    - database_file.ts: ensureDatabaseFile (create/validate DB file with header)
-  - fs/
-    - paths.ts: resolveUserPath (expands ~, resolves ./ and ../), ensureParentDir
-  - text/
-    - strings.ts: escapeRegex, normalizeName
-    - distance.ts: levenshtein
-- Constants (src/constants)
-  - header.ts: constants for the on‑disk header (size, offsets, defaults).
+  - Discovers and routes commands; supports global help, per‑command help, unknown‑input suggestions, and dot‑prefixed system commands.
 - Session (src/session.ts)
-  - Holds session state (dbPath, dbName) used by the REPL to render the prompt.
-- Tests (tests/*)
-  - Bun’s Jest‑compatible test runner with a test‑only environment.
-- CI (/.github/workflows/ci.yml)
-  - Simple GitHub Actions workflow that installs Bun and runs the test suite on push/PR.
+  - Holds per‑session state: dbPath, dbName, monitoringEnabled, monitorLogPath.
+- Commands (src/commands)
+  - System: .exit, .clear, .monitoring
+  - Database: ATTACH DATABASE
+- Helpers (src/helpers/cli)
+  - prompt.ts — computePrompt based on session
+  - welcome.ts — printWelcome banner
+  - history.ts — load/append history and provide readline options
+  - monitoring.ts — enable/disable monitoring and append JSONL metrics
+- Constants (src/constants)
+  - header.ts — header sizes/offsets/defaults
+  - repl.ts — history config
+  - monitoring.ts — monitoring config
 
 Data flow (simplified):
 
@@ -132,8 +116,7 @@ Layout:
 
 Implementation:
 - Constants in src/constants/header.ts
-- Helpers in src/helpers/db/header.ts
-- Used by ATTACH DATABASE in src/commands/database/attach.ts
+- Header creation and validation inside src/commands/database/attach.ts
 
 ### ATTACH DATABASE path handling
 
@@ -172,35 +155,34 @@ The prompt uses this to display either:
 ├─ src
 │  ├─ app.ts                # REPL entrypoint
 │  ├─ router.ts             # Regex‑powered command router
-│  ├─ session.ts            # Session state for prompt
+│  ├─ session.ts            # Session state for prompt/monitoring
 │  ├─ interfaces
-│  │  └─ command.ts
+│  │  └─ command.ts         # Command interface
 │  ├─ commands
 │  │  ├─ system
-│  │  │  ├─ _index.ts       # SystemCommands registry
+│  │  │  ├─ clear.ts        # .clear
 │  │  │  ├─ exit.ts         # .exit
-│  │  │  └─ clear.ts        # .clear
+│  │  │  └─ monitoring.ts   # .monitoring
 │  │  └─ database
-│  │     ├─ _index.ts       # DatabaseCommands registry
 │  │     └─ attach.ts       # ATTACH DATABASE
 │  ├─ helpers
-│  │  ├─ cli
-│  │  │  ├─ help.ts          # isHelpToken
-│  │  │  └─ welcome.ts       # printWelcome
-│  │  ├─ db
-│  │  │  ├─ header.ts        # createHeader, isValidHeader
-│  │  │  └─ database_file.ts # ensureDatabaseFile
-│  │  ├─ fs
-│  │  │  └─ paths.ts         # resolveUserPath, ensureParentDir
-│  │  └─ text
-│  │     ├─ strings.ts       # escapeRegex, normalizeName
-│  │     └─ distance.ts      # levenshtein
+│  │  └─ cli
+│  │     ├─ history.ts      # REPL history utilities
+│  │     ├─ monitoring.ts   # Metrics utilities (enable/disable/log)
+│  │     ├─ prompt.ts       # computePrompt()
+│  │     └─ welcome.ts      # printWelcome()
 │  └─ constants
-│     └─ header.ts          # header constants (sizes, offsets)
-├─ tests                    # Bun test files
-├─ .github/workflows/ci.yml # GitHub Actions (Bun CI)
+│     ├─ header.ts          # header constants (sizes, offsets)
+│     ├─ monitoring.ts      # monitoring constants
+│     └─ repl.ts            # REPL constants (history)
+├─ tests
+│  ├─ attach_command.test.ts
+│  ├─ database_commands.test.ts
+│  ├─ router.test.ts
+│  └─ setup.ts
 ├─ package.json             # scripts: start, test, etc.
-└─ tsconfig.json
+├─ tsconfig.json
+└─ README.md
 ```
 
 
@@ -220,8 +202,7 @@ Commands:
 
 ## Continuous Integration
 
-GitHub Actions workflow: .github/workflows/ci.yml
-- Checks out the repo, installs Bun and dependencies, ensures .env.test exists, then runs the test suite with coverage.
+You can add a GitHub Actions workflow to run the test suite on push/PR. An example workflow may be added later.
 
 
 ## Roadmap (ideas)
@@ -236,3 +217,91 @@ GitHub Actions workflow: .github/workflows/ci.yml
 ## License
 
 MIT — see LICENSE (to be added if licensing is required for distribution).
+
+
+---
+
+## REPL history (persistent command history)
+
+LiteCoreDB persists your REPL input history across sessions in a shell-like format.
+
+- Location: ~/.litecore_history (config constant: src/constants/repl.ts → HISTORY_BASENAME)
+- In-memory size: last 1000 entries by default (config constant: DEFAULT_HISTORY_SIZE)
+- How it works:
+  - On startup, the REPL loads the history file and feeds it to readline so you can navigate with Up/Down arrows.
+  - Each non-empty line you enter is appended to the history file.
+  - Lines starting with a leading space are ignored (matching common shells behavior).
+  - Empty lines are ignored. Values are trimmed before being saved.
+  - Readline expects the newest entry first; the on-disk file stores oldest-first. The helper adjusts ordering automatically.
+- Implementation:
+  - src/helpers/cli/history.ts (getHistoryFilePath, loadHistory, appendHistory, historyOptions)
+  - src/constants/repl.ts (HISTORY_BASENAME, DEFAULT_HISTORY_SIZE)
+
+Example
+- Type a few commands, then exit and restart the REPL — your previous commands will be accessible with Up/Down arrows.
+
+
+## Monitoring and performance metrics (.monitoring)
+
+You can optionally collect per-command timing and write results to a JSONL log. Monitoring is disabled by default.
+
+- Default: OFF (src/constants/monitoring.ts → DEFAULT_MONITORING_ENABLED)
+- Log file: ~/.litecore_monitoring.log (src/constants/monitoring.ts → MONITOR_BASENAME)
+- Toggle/status command: .monitoring
+  - .monitoring — print current status and the target log file
+  - .monitoring status — same as above
+  - .monitoring true | on | enable — enable monitoring and print the log path
+  - .monitoring false | off | disable — disable monitoring and print the log path
+- Inline output: When ON, after each command the REPL prints a short summary like: [monitor] 12.34 ms
+- JSONL schema: Each executed input line (non-empty) appends one JSON object per line to the log file:
+  - ts: ISO timestamp when execution started
+  - input: the raw input the user entered
+  - ms: execution duration in milliseconds
+
+Example JSONL entry
+```
+{"ts":"2025-10-05T13:20:00.000Z","input":"ATTACH DATABASE ./data.db","ms":12.34}
+```
+
+Exit behavior
+- On .monitoring false and on .exit, the REPL prints the monitoring log path for discoverability.
+
+Implementation
+- src/helpers/cli/monitoring.ts (enableMonitoring, disableMonitoring, isMonitoringEnabled, logMetrics, printMonitoringLogPathIfAny)
+- src/commands/system/monitoring.ts (.monitoring command)
+- src/app.ts (integrates timing + logMetrics and prints inline summary when monitoring is ON)
+- src/constants/monitoring.ts (MONITOR_BASENAME, DEFAULT_MONITORING_ENABLED)
+
+
+## Updated project structure highlights
+
+Newly relevant files for REPL UX and metrics:
+- src/helpers/cli/history.ts — persistent history utilities
+- src/helpers/cli/prompt.ts — computes dynamic prompt based on session
+- src/helpers/cli/monitoring.ts — monitoring utilities and JSONL logging
+- src/constants/repl.ts — REPL constants (history)
+- src/constants/monitoring.ts — Monitoring constants
+
+
+## Tests and covered scenarios
+
+Run tests:
+- bun run test
+
+Covered scenarios include:
+- Router
+  - prints global help with available commands including .exit
+  - requires leading dot for .exit and suggests .exit when 'exit' is typed
+  - shows per-command help via 'help .exit'
+  - groups global help by System and Database categories
+- Database command suggestions
+  - suggests 'ATTACH DATABASE' when user types 'attach' or 'ATTACH'
+- ATTACH DATABASE
+  - creates the database file with a valid 100-byte header when it does not exist
+  - opens an existing database file with a valid header
+  - prints an error when the existing file has an invalid header
+  - prints usage when the path is missing
+  - expands '~' to the home directory and avoids creating a literal '~' folder
+  - resolves '../' and './' paths correctly
+
+Note: Filesystem-dependent tests use temporary directories and perform clean-up after each test.

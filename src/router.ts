@@ -1,9 +1,9 @@
-import { escapeRegex, normalizeName } from "~/helpers/text/strings.ts";
-import { SystemCommands } from './commands/system/_index';
-import { DatabaseCommands } from './commands/database/_index.ts';
-import type { Command } from '@Interfaces/command';
-import { levenshtein } from "~/helpers/text/distance.ts";
-import { isHelpToken } from "~/helpers/cli/help.ts";
+import {escapeRegex, normalizeName} from "~/helpers/text/strings.ts";
+import {DatabaseCommands} from './commands/database/_index.ts';
+import {SystemCommands} from './commands/system/_index';
+import {levenshtein} from "~/helpers/text/distance.ts";
+import type {Command} from '@Interfaces/command';
+import {isHelpToken} from "~/helpers/cli/help.ts";
 
 /**
  * Router
@@ -100,7 +100,7 @@ export class Router {
             this.suggestClosest(first);
             return;
         }
-        const { cmd, matchedLen } = match;
+        const {cmd, matchedLen} = match;
 
         // Remaining after the command name are arguments
         const argStr = raw.slice(matchedLen).trim();
@@ -144,7 +144,7 @@ export class Router {
             if (m && m[0]) {
                 const len = m[0].length;
                 if (!best || len > best.matchedLen) {
-                    best = { cmd: c, matchedLen: len };
+                    best = {cmd: c, matchedLen: len};
                 }
             }
         }
@@ -183,7 +183,7 @@ export class Router {
         const needle = normalizeName(input);
 
         // 1) Try Levenshtein suggestion first (helps with typos and dot-less variants)
-        const scores = this.commands.map(c => ({ c, score: levenshtein(needle, normalizeName(c.name())) }));
+        const scores = this.commands.map(c => ({c, score: levenshtein(needle, normalizeName(c.name()))}));
         scores.sort((a, b) => a.score - b.score);
         const best = scores[0];
         if (best && best.score <= 3) {
