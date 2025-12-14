@@ -12,6 +12,9 @@
     "repl",
     "learning"
   ],
+  "bin": {
+    "litecore": "./bin/litecore"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/proXDhiya/LiteCoreDB.git"
@@ -34,6 +37,7 @@
   },
   "scripts": {
     "start": "bun src/app.ts",
+    "build": "bun build src/app.ts --compile --outfile bin/litecore --target bun --minify",
     "test": "bun test --env-file=.env.test --preload ./tests/setup.ts",
     "test:watch": "bun test --watch --env-file=.env.test --preload ./tests/setup.ts",
     "test:cov": "bun test --coverage --env-file=.env.test --preload ./tests/setup.ts",
